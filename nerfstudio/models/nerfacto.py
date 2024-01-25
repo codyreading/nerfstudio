@@ -44,6 +44,7 @@ from nerfstudio.model_components.losses import (
     interlevel_loss,
     orientation_loss,
     pred_normal_loss,
+    robust_rgb_loss,
     scale_gradients_by_distance_squared,
 )
 from nerfstudio.model_components.ray_samplers import (

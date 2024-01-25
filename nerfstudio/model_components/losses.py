@@ -318,6 +318,31 @@ def depth_loss(
 
     raise NotImplementedError("Provided depth loss type not implemented.")
 
+def robust_rgb_loss(rgb_gt,rgb_outputs,patch_size):
+    out_patches = rgb_outputs.view(-1,1,patch_size,patch_size,3)
+    gt_patches = rgb_gt.view(-1,1,patch_size,patch_size,3)
+    device = rgb_outputs.device
+    batch_size = out_patches.shape[0]
+    residuals = torch.mean((out_patches - gt_patches)**2,dim=-1)
+    with torch.no_grad():
+        med_residual = torch.quantile(residuals,.9)
+        #equation 8
+        weight = (residuals<=med_residual).float()#B x patch x patch
+        #equation 9
+        weight = torch.nn.functional.pad(weight,(1,1,1,1),mode='replicate')
+        blurred_w = (torch.nn.functional.conv2d(weight,(1/9.)*torch.ones((1,1,3,3),device=device),
+                padding='valid')>=0.5).float()
+        #equation 10
+        expected_w = blurred_w.view(batch_size,-1).mean(1)
+        weight_r8 = (expected_w >= 0.6).float() #Bx1
+        #the paper uses the lines below and multiplies residuals by final_w, but I found that just using
+        #the value for all 16 pixels worked better.
+        # final_w = torch.zeros((batch_size,patch_size,patch_size),device=device)
+        # final_w[:,
+        #         (patch_size//2-patch_size//4):(patch_size//2+patch_size//4),
+        #         (patch_size//2-patch_size//4):(patch_size//2+patch_size//4)] = weight_r8[:,None,None]
+    loss = torch.mean(residuals.squeeze()*weight_r8[:,None,None])
+    return loss
 
 def monosdf_normal_loss(
     normal_pred: Float[Tensor, "num_samples 3"], normal_gt: Float[Tensor, "num_samples 3"]
