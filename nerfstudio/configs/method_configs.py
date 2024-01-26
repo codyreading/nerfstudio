@@ -30,6 +30,7 @@ from nerfstudio.data.datamanagers.base_datamanager import (
     VanillaDataManager,
     VanillaDataManagerConfig,
 )
+from nerfstudio.data.datamanagers.patch_datamanager import PatchDataManagerConfig
 from nerfstudio.data.dataparsers.blender_dataparser import BlenderDataParserConfig
 from nerfstudio.data.dataparsers.dnerf_dataparser import DNeRFDataParserConfig
 from nerfstudio.data.dataparsers.dycheck_dataparser import DycheckDataParserConfig
@@ -122,15 +123,15 @@ method_configs["nerfacto"] = TrainerConfig(
     vis="viewer",
 )
 method_configs["nerfacto-robust"] = TrainerConfig(
-    method_name="nerfacto",
+    method_name="nerfacto-robust",
     steps_per_eval_batch=500,
     steps_per_save=2000,
     max_num_iterations=30000,
     mixed_precision=True,
     pipeline=VanillaPipelineConfig(
-        datamanager=VanillaDataManagerConfig(
+        datamanager=PatchDataManagerConfig(
             dataparser=NerfstudioDataParserConfig(),
-            train_num_rays_per_batch=4096,
+            train_num_rays_per_batch=17000,
             eval_num_rays_per_batch=4096,
             camera_optimizer=CameraOptimizerConfig(
                 mode="SO3xR3",
